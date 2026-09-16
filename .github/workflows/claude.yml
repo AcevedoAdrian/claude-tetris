@@ -1,5 +1,8 @@
 name: Claude Code
 
+# Nota: el triage automático de issues recién abiertos (labels + diagnóstico
+# en Markdown en el body) vive en claude-issue-triage.yml, no en este workflow.
+
 on:
   issue_comment:
     types: [created]
