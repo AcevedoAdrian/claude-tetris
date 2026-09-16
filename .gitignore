@@ -1,1 +1,10 @@
-.DS_STORE
+# OS
+.DS_Store
+
+# Claude Code — estado local de sesión
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/worktrees/
+
+# Skills instaladas como caché (se restauran con skills-lock.json)
+.agents/
