@@ -8,7 +8,7 @@ name: Claude Issue Triage
 
 on:
   issues:
-    types: [opened, reopened]
+    types: [opened, edited, reopened]
 
 concurrency:
   group: issue-triage-${{ github.event.issue.number }}
@@ -17,10 +17,14 @@ concurrency:
 jobs:
   triage:
     # No triagear si el propio issue ya invoca a @claude explícitamente
-    # (ese caso lo maneja claude.yml).
+    # (ese caso lo maneja claude.yml), ni si la edición la generó el propio
+    # bot al escribir el diagnóstico (evita un loop infinito). Esto último
+    # ya está protegido por GitHub (las ediciones hechas con GITHUB_TOKEN no
+    # disparan un nuevo run), pero se deja explícito como defensa adicional.
     if: |
       !contains(github.event.issue.body, '@claude') &&
-      !contains(github.event.issue.title, '@claude')
+      !contains(github.event.issue.title, '@claude') &&
+      github.event.sender.login != 'github-actions[bot]'
     runs-on: ubuntu-latest
     permissions:
       contents: read
