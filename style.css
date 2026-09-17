@@ -26,6 +26,11 @@
   --restart-hover: #9bbdff;
   --switch-bg: #22223a;
   --switch-knob: #7aa2f7;
+  --power-glow: #fff59d;
+  --power-badge-bg: rgba(255, 245, 157, 0.1);
+  --power-badge-border: #6b6b3a;
+  --freeze-color: #4dd0e1;
+  --flash-color: #fff8c4;
 }
 
 body.light-mode {
@@ -50,6 +55,11 @@ body.light-mode {
   --restart-hover: #5578e0;
   --switch-bg: #c2c2d6;
   --switch-knob: #3457c9;
+  --power-glow: #c9a400;
+  --power-badge-bg: rgba(201, 164, 0, 0.12);
+  --power-badge-border: #c9a400;
+  --freeze-color: #2a8fa3;
+  --flash-color: #8a6d00;
 }
 
 body {
@@ -126,6 +136,76 @@ body {
   border: 1px solid var(--board-border);
   background: var(--board-bg);
   border-radius: 4px;
+}
+
+/* ---- Indicador de power-up ---- */
+.power-badge {
+  display: inline-block;
+  width: fit-content;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--label-color);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 3px 8px;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.power-badge.active {
+  color: var(--power-glow);
+  background: var(--power-badge-bg);
+  border-color: var(--power-badge-border);
+  animation: power-pulse 1s infinite alternate;
+}
+
+.freeze-timer {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--freeze-color);
+}
+
+.freeze-timer.hidden {
+  display: none;
+}
+
+@keyframes power-pulse {
+  from { box-shadow: 0 0 0px var(--power-glow); }
+  to { box-shadow: 0 0 10px var(--power-glow); }
+}
+
+/* ---- Banner de power-up activado ---- */
+.power-flash {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: var(--flash-color);
+  text-shadow: 0 0 16px var(--power-glow);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 5;
+}
+
+.power-flash.hidden {
+  display: none;
+}
+
+.power-flash.flash-run {
+  animation: flash-in 1.2s ease-out forwards;
+}
+
+@keyframes flash-in {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+  35% { transform: translate(-50%, -50%) scale(1); }
+  75% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
 }
 
 /* ---- Toggle de tema ---- */

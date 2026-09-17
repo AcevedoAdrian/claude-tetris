@@ -36,6 +36,12 @@
           </div>
 
           <div class="panel-section">
+            <span class="label">POWER-UP</span>
+            <span class="power-badge" id="power-indicator">—</span>
+            <span class="freeze-timer hidden" id="freeze-timer"></span>
+          </div>
+
+          <div class="panel-section">
             <span class="label">NEXT</span>
             <canvas id="next-canvas" width="120" height="120"></canvas>
           </div>
@@ -50,8 +56,21 @@
               <li><kbd>P</kbd> pausa</li>
             </ul>
           </div>
+
+          <div class="panel-section controls">
+            <span class="label">POWER-UPS</span>
+            <ul>
+              <li>💣 Bomba: destruye 3×3</li>
+              <li>⚡ Rayo: limpia fila y columna</li>
+              <li>🎨 Tinte: crea comodines</li>
+              <li>⬇️ Gravedad: compacta el tablero</li>
+              <li>❄️ Congelar: detiene la caída 5s</li>
+            </ul>
+          </div>
         </aside>
       </div>
+
+      <div id="power-flash" class="power-flash hidden"></div>
 
       <div id="overlay" class="overlay hidden">
         <div class="overlay-box">
