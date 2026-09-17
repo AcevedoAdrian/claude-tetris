@@ -11,6 +11,60 @@
     <h1 class="game-title">TETRIS</h1>
     <div class="wrapper">
       <div class="game-container">
+        <aside class="panel legend-panel">
+          <div class="panel-section controls legend">
+            <span class="label">POWER-UPS</span>
+            <ul class="legend-list">
+              <li>
+                <span class="legend-icon">💣</span>
+                <div><strong>Bomba</strong><br>Destruye un área 3×3 centrada en la pieza. +10 pts × nivel por bloque destruido.</div>
+              </li>
+              <li>
+                <span class="legend-icon">⚡</span>
+                <div><strong>Rayo</strong><br>Limpia toda la fila y toda la columna donde cae la pieza.</div>
+              </li>
+              <li>
+                <span class="legend-icon">🎨</span>
+                <div><strong>Tinte</strong><br>Convierte todos los bloques del mismo tipo en comodines. Se destruyen en cadena al completar una línea con ellos.</div>
+              </li>
+              <li>
+                <span class="legend-icon">⬇️</span>
+                <div><strong>Gravedad</strong><br>Compacta el tablero: cae todo bloque suelto y elimina los huecos.</div>
+              </li>
+              <li>
+                <span class="legend-icon">❄️</span>
+                <div><strong>Congelar</strong><br>Detiene la caída automática durante 5 segundos (sigues pudiendo mover y rotar).</div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="panel-section controls legend">
+            <span class="label">PIEZAS ESPECIALES</span>
+            <ul class="legend-list">
+              <li>
+                <span class="legend-icon">➕</span>
+                <div><strong>Pentominó +</strong><br>Cruz de 5 bloques. Simétrica: no rota.</div>
+              </li>
+              <li>
+                <span class="legend-icon">🟦</span>
+                <div><strong>Pentominó U</strong><br>5 bloques en forma de U. Rota con normalidad.</div>
+              </li>
+              <li>
+                <span class="legend-icon">🟪</span>
+                <div><strong>Pentominó Y</strong><br>5 bloques en forma irregular. Rota con normalidad.</div>
+              </li>
+              <li>
+                <span class="legend-icon">⬜</span>
+                <div><strong>3×3 hueca</strong><br>8 bloques con un hueco en el centro. Reto difícil de encajar; no rota. Aparece al azar.</div>
+              </li>
+              <li>
+                <span class="legend-icon">▫️</span>
+                <div><strong>1×1</strong><br>Un solo bloque. Premio automático: llega como pieza NEXT justo después de limpiar un Tetris (4 líneas de golpe).</div>
+              </li>
+            </ul>
+          </div>
+        </aside>
+
         <canvas id="board" width="300" height="600"></canvas>
 
         <aside class="panel">
@@ -54,17 +108,6 @@
               <li><kbd>↓</kbd> bajar</li>
               <li><kbd>Space</kbd> caída</li>
               <li><kbd>P</kbd> pausa</li>
-            </ul>
-          </div>
-
-          <div class="panel-section controls">
-            <span class="label">POWER-UPS</span>
-            <ul>
-              <li>💣 Bomba: destruye 3×3</li>
-              <li>⚡ Rayo: limpia fila y columna</li>
-              <li>🎨 Tinte: crea comodines</li>
-              <li>⬇️ Gravedad: compacta el tablero</li>
-              <li>❄️ Congelar: detiene la caída 5s</li>
             </ul>
           </div>
         </aside>

@@ -14,6 +14,11 @@ const COLORS = [
   '#90caf9', // J - pale blue
   '#ffb74d', // L - orange
   '#fff59d', // 8 - comodín (Tinte)
+  '#f06292', // 9  - pentominó "+"
+  '#4db6ac', // 10 - pentominó "U"
+  '#9575cd', // 11 - pentominó "Y"
+  '#ffffff', // 12 - single 1×1 (recompensa por Tetris)
+  '#a1887f', // 13 - 3×3 hueca
 ];
 
 const PIECES = [
@@ -25,11 +30,21 @@ const PIECES = [
   [[5,5,0],[0,5,5],[0,0,0]],                  // Z
   [[6,0,0],[6,6,6],[0,0,0]],                  // J
   [[0,0,7],[7,7,7],[0,0,0]],                  // L
+  null,                                        // 8 - hueco de WILD (no es una pieza)
+  [[0,9,0],[9,9,9],[0,9,0]],                  // 9  - pentominó "+" (cruz)
+  [[10,0,10],[10,10,10]],                     // 10 - pentominó "U"
+  [[0,11],[11,11],[0,11],[0,11]],             // 11 - pentominó "Y"
+  [[12]],                                      // 12 - single 1×1
+  [[13,13,13],[13,0,13],[13,13,13]],          // 13 - 3×3 hueca
 ];
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
 
 const WILD = 8;                      // índice de bloque comodín (Tinte)
+const SINGLE = 12;                   // pieza 1×1, recompensa exclusiva de un Tetris
+const NO_ROTATE = new Set([SINGLE, 9, 13]); // 1×1, cruz "+" y 3×3 hueca: simétricas, no rotan
+// Pesos de aparición de cada tipo de pieza (la 12/SINGLE no entra: solo llega como recompensa).
+const PIECE_WEIGHTS = { 1: 10, 2: 10, 3: 10, 4: 10, 5: 10, 6: 10, 7: 10, 9: 8, 10: 8, 11: 8, 13: 6 };
 const POWERUP_LINE_INTERVAL = 5;     // cada cuántas líneas eliminadas aparece una pieza especial
 const POWER_BLOCK_SCORE = 10;        // pts por bloque destruido por un power-up (× level)
 const FREEZE_MS = 5000;
@@ -63,7 +78,7 @@ const powerFlashEl = document.getElementById('power-flash');
 const THEME_KEY = 'tetris-theme';
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId, gridColor;
-let linesSincePower, pendingPower, freezeRemaining, flashTimeout;
+let linesSincePower, pendingPower, pendingSingle, freezeRemaining, flashTimeout;
 
 function applyTheme(isLight) {
   document.body.classList.toggle('light-mode', isLight);
@@ -83,10 +98,24 @@ function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
 }
 
-function randomPiece(power = null) {
-  const type = Math.floor(Math.random() * 7) + 1;
+function makePiece(type, power = null) {
   const shape = PIECES[type].map(row => [...row]);
   return { type, shape, x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2), y: 0, power };
+}
+
+function randomType() {
+  const entries = Object.entries(PIECE_WEIGHTS);
+  const total = entries.reduce((sum, [, w]) => sum + w, 0);
+  let roll = Math.random() * total;
+  for (const [type, weight] of entries) {
+    roll -= weight;
+    if (roll < 0) return Number(type);
+  }
+  return Number(entries[entries.length - 1][0]);
+}
+
+function randomPiece(power = null) {
+  return makePiece(randomType(), power);
 }
 
 function collide(shape, ox, oy) {
@@ -112,6 +141,7 @@ function rotateCW(shape) {
 }
 
 function tryRotate() {
+  if (NO_ROTATE.has(current.type)) return; // 1×1, cruz "+" y 3×3 hueca no rotan
   const rotated = rotateCW(current.shape);
   const kicks = [0, -1, 1, -2, 2];
   for (const kick of kicks) {
@@ -258,6 +288,7 @@ function clearLines() {
       linesSincePower -= POWERUP_LINE_INTERVAL;
       pendingPower = true;
     }
+    if (cleared === 4) pendingSingle = true; // Tetris: recompensa con la pieza 1×1
     updateHUD();
   }
 }
@@ -295,8 +326,15 @@ function lockPiece() {
 
 function spawn() {
   current = next;
-  next = randomPiece(pendingPower ? POWERS[Math.floor(Math.random() * POWERS.length)] : null);
-  pendingPower = false;
+  if (pendingSingle) {
+    // La 1×1 nunca lleva power-up; si también había un power-up pendiente, se conserva
+    // para el turno siguiente en vez de perderse.
+    next = makePiece(SINGLE);
+    pendingSingle = false;
+  } else {
+    next = randomPiece(pendingPower ? POWERS[Math.floor(Math.random() * POWERS.length)] : null);
+    pendingPower = false;
+  }
   if (collide(current.shape, current.x, current.y)) {
     endGame();
     return;
@@ -432,11 +470,12 @@ function draw() {
 }
 
 function drawNext() {
-  const NB = 30;
   nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
   const shape = next.shape;
-  const offX = Math.floor((4 - shape[0].length) / 2);
-  const offY = Math.floor((4 - shape.length) / 2);
+  const w = shape[0].length, h = shape.length;
+  const NB = Math.min(30, Math.floor(Math.min(nextCanvas.width / w, nextCanvas.height / h)));
+  const offX = (nextCanvas.width - w * NB) / 2 / NB;
+  const offY = (nextCanvas.height - h * NB) / 2 / NB;
   for (let r = 0; r < shape.length; r++)
     for (let c = 0; c < shape[r].length; c++)
       drawBlock(nextCtx, offX + c, offY + r, shape[r][c], NB);
@@ -503,6 +542,7 @@ function init() {
   lastTime = performance.now();
   linesSincePower = 0;
   pendingPower = false;
+  pendingSingle = false;
   freezeRemaining = 0;
   clearTimeout(flashTimeout);
   powerFlashEl.classList.add('hidden');
