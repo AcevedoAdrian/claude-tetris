@@ -19,6 +19,7 @@ const COLORS = [
   '#9575cd', // 11 - pentominó "Y"
   '#ffffff', // 12 - single 1×1 (recompensa por Tetris)
   '#a1887f', // 13 - 3×3 hueca
+  '#5c5c6e', // 14 - basura (modo desafío)
 ];
 
 const PIECES = [
@@ -36,6 +37,7 @@ const PIECES = [
   [[0,11],[11,11],[0,11],[0,11]],             // 11 - pentominó "Y"
   [[12]],                                      // 12 - single 1×1
   [[13,13,13],[13,0,13],[13,13,13]],          // 13 - 3×3 hueca
+  null,                                        // 14 - basura (no es una pieza jugable)
 ];
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
@@ -59,6 +61,31 @@ const POWER_INFO = {
   FREEZE:    { icon: '❄️', label: 'CONGELAR' },
 };
 
+// ---- Modo desafío ----
+const GARBAGE = 14;
+const SPRINT_GOAL = 40;
+const SPRINT_MS = 120000;           // 2 minutos
+const GARBAGE_INTERVAL = 10000;     // 10 s
+const CLASSIC_WEIGHTS = { 1: 10, 2: 10, 3: 10, 4: 10, 5: 10, 6: 10, 7: 10 };
+
+// Patrón de obstáculos pre-colocados (de abajo hacia arriba); '#' = bloque fijo, '.' = hueco.
+const PREFILL_PATTERN = [
+  '.#..####.#',
+  '#..#....#.',
+  '..#.####..',
+  '.####..##.',
+  '#....##...',
+  '.##.#..##.',
+];
+
+const MODS = [
+  { key: 'sprint40',   icon: '🏁', title: '40 LÍNEAS',       desc: 'Limpia 40 líneas en 2:00' },
+  { key: 'rising',     icon: '🧱', title: 'BASURA',          desc: 'Sube una fila cada 10 s' },
+  { key: 'prefill',    icon: '🪨', title: 'TABLERO SUCIO',   desc: 'Empiezas con obstáculos' },
+  { key: 'invisible',  icon: '👻', title: 'INVISIBLE',       desc: 'La pieza desaparece al apoyarse' },
+  { key: 'reverseRot', icon: '🔄', title: 'ROTACIÓN INVERSA', desc: 'La rotación va al revés' },
+];
+
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next-canvas');
@@ -74,11 +101,21 @@ const themeToggle = document.getElementById('theme-toggle');
 const powerIndicatorEl = document.getElementById('power-indicator');
 const freezeTimerEl = document.getElementById('freeze-timer');
 const powerFlashEl = document.getElementById('power-flash');
+const powerSectionEl = document.getElementById('power-section');
+const modeMenuEl = document.getElementById('mode-menu');
+const modeGridEl = document.getElementById('mode-grid');
+const playBtn = document.getElementById('play-btn');
+const menuBtn = document.getElementById('menu-btn');
+const challengeHudEl = document.getElementById('challenge-hud');
+const timeLeftEl = document.getElementById('time-left');
+const goalProgressEl = document.getElementById('goal-progress');
+const modsBadgesEl = document.getElementById('mods-badges');
 
 const THEME_KEY = 'tetris-theme';
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId, gridColor;
 let linesSincePower, pendingPower, pendingSingle, freezeRemaining, flashTimeout;
+let mods, challengeActive, running, timeRemaining, garbageAccum, selectedMods;
 
 function applyTheme(isLight) {
   document.body.classList.toggle('light-mode', isLight);
@@ -104,7 +141,7 @@ function makePiece(type, power = null) {
 }
 
 function randomType() {
-  const entries = Object.entries(PIECE_WEIGHTS);
+  const entries = Object.entries(challengeActive ? CLASSIC_WEIGHTS : PIECE_WEIGHTS);
   const total = entries.reduce((sum, [, w]) => sum + w, 0);
   let roll = Math.random() * total;
   for (const [type, weight] of entries) {
@@ -140,9 +177,18 @@ function rotateCW(shape) {
   return result;
 }
 
+function rotateCCW(shape) {
+  const rows = shape.length, cols = shape[0].length;
+  const result = Array.from({ length: cols }, () => new Array(rows).fill(0));
+  for (let r = 0; r < rows; r++)
+    for (let c = 0; c < cols; c++)
+      result[cols - 1 - c][r] = shape[r][c];
+  return result;
+}
+
 function tryRotate() {
   if (NO_ROTATE.has(current.type)) return; // 1×1, cruz "+" y 3×3 hueca no rotan
-  const rotated = rotateCW(current.shape);
+  const rotated = mods.reverseRot ? rotateCCW(current.shape) : rotateCW(current.shape);
   const kicks = [0, -1, 1, -2, 2];
   for (const kick of kicks) {
     if (!collide(rotated, current.x + kick, current.y)) {
@@ -237,6 +283,25 @@ function applyPower() {
   flashPower(current.power);
 }
 
+function pushGarbage() {
+  if (board[0].some(v => v)) {
+    endGame('lose');
+    return;
+  }
+  const gapCol = Math.floor(Math.random() * COLS);
+  const row = new Array(COLS).fill(GARBAGE);
+  row[gapCol] = 0;
+  board.shift();
+  board.push(row);
+
+  current.y--;
+  const pushedOffTop = current.shape.some((row, r) =>
+    row.some((v, c) => v && current.y + r < 0));
+  if (pushedOffTop || collide(current.shape, current.x, current.y)) {
+    endGame('lose');
+  }
+}
+
 function clearLines() {
   // Filas completas ANTES de tocar los comodines (los WILD cuentan como llenos).
   const fullRows = [];
@@ -283,13 +348,18 @@ function clearLines() {
     score += (LINE_SCORES[cleared] || 0) * level;
     level = Math.floor(lines / 10) + 1;
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
-    linesSincePower += cleared;
-    if (linesSincePower >= POWERUP_LINE_INTERVAL) {
-      linesSincePower -= POWERUP_LINE_INTERVAL;
-      pendingPower = true;
+    if (!challengeActive) {
+      linesSincePower += cleared;
+      if (linesSincePower >= POWERUP_LINE_INTERVAL) {
+        linesSincePower -= POWERUP_LINE_INTERVAL;
+        pendingPower = true;
+      }
+      if (cleared === 4) pendingSingle = true; // Tetris: recompensa con la pieza 1×1
     }
-    if (cleared === 4) pendingSingle = true; // Tetris: recompensa con la pieza 1×1
     updateHUD();
+    if (mods.sprint40 && lines >= SPRINT_GOAL) {
+      endGame('win');
+    }
   }
 }
 
@@ -321,6 +391,7 @@ function lockPiece() {
   if (current.power) applyPower();   // bomba/rayo/tinte/gravedad actúan sobre el board ya fusionado
   clearLines();                      // incluye la cadena de comodines
   if (current.power === 'GRAVITY') clearLines(); // la compactación puede haber formado líneas nuevas
+  if (gameOver) return;
   spawn();
 }
 
@@ -362,6 +433,13 @@ function updateHUD() {
     freezeTimerEl.classList.remove('hidden');
   } else {
     freezeTimerEl.classList.add('hidden');
+  }
+
+  if (mods.sprint40) {
+    const s = Math.ceil(timeRemaining / 1000);
+    timeLeftEl.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    timeLeftEl.classList.toggle('time-low', timeRemaining <= 30000);
+    goalProgressEl.textContent = `${Math.min(lines, SPRINT_GOAL)} / ${SPRINT_GOAL}`;
   }
 }
 
@@ -454,19 +532,26 @@ function draw() {
     for (let c = 0; c < COLS; c++)
       drawBlock(ctx, c, r, board[r][c], BLOCK);
 
-  // ghost
   const gy = ghostY();
-  for (let r = 0; r < current.shape.length; r++)
-    for (let c = 0; c < current.shape[r].length; c++)
-      if (current.shape[r][c])
-        drawBlock(ctx, current.x + c, gy + r, current.shape[r][c], BLOCK, 0.2);
+  const landed = collide(current.shape, current.x, current.y + 1);
+  const hideCurrent = mods.invisible && landed;
 
-  // current piece
-  for (let r = 0; r < current.shape.length; r++)
-    for (let c = 0; c < current.shape[r].length; c++)
-      drawBlock(ctx, current.x + c, current.y + r, current.shape[r][c], BLOCK);
+  // ghost (oculto en el modo de piezas invisibles: delataría el punto de aterrizaje)
+  if (!mods.invisible) {
+    for (let r = 0; r < current.shape.length; r++)
+      for (let c = 0; c < current.shape[r].length; c++)
+        if (current.shape[r][c])
+          drawBlock(ctx, current.x + c, gy + r, current.shape[r][c], BLOCK, 0.2);
+  }
 
-  if (current.power) drawPowerOverlay(ctx, current.shape, current.x, current.y, BLOCK, current.power);
+  // current piece (oculta en el instante en que toca el suelo, si el modificador está activo)
+  if (!hideCurrent) {
+    for (let r = 0; r < current.shape.length; r++)
+      for (let c = 0; c < current.shape[r].length; c++)
+        drawBlock(ctx, current.x + c, current.y + r, current.shape[r][c], BLOCK);
+
+    if (current.power) drawPowerOverlay(ctx, current.shape, current.x, current.y, BLOCK, current.power);
+  }
 }
 
 function drawNext() {
@@ -483,24 +568,38 @@ function drawNext() {
   if (next.power) drawPowerOverlay(nextCtx, shape, offX, offY, NB, next.power);
 }
 
-function endGame() {
+function endGame(result = 'lose') {
   gameOver = true;
+  running = false;
   cancelAnimationFrame(animId);
-  overlayTitle.textContent = 'GAME OVER';
+  if (result === 'win') {
+    overlayTitle.textContent = '¡DESAFÍO SUPERADO!';
+    overlayTitle.classList.add('win');
+  } else if (result === 'timeout') {
+    overlayTitle.textContent = 'TIEMPO AGOTADO';
+    overlayTitle.classList.remove('win');
+  } else {
+    overlayTitle.textContent = 'GAME OVER';
+    overlayTitle.classList.remove('win');
+  }
   overlayScore.textContent = `Puntuación: ${score.toLocaleString()}`;
+  menuBtn.classList.remove('hidden');
   overlay.classList.remove('hidden');
 }
 
 function togglePause() {
-  if (gameOver) return;
+  if (!running || gameOver) return;
   paused = !paused;
   if (!paused) {
+    overlay.classList.add('hidden');
     lastTime = performance.now();
     loop(lastTime);
   } else {
     cancelAnimationFrame(animId);
     overlayTitle.textContent = 'PAUSA';
+    overlayTitle.classList.remove('win');
     overlayScore.textContent = '';
+    menuBtn.classList.add('hidden');
     overlay.classList.remove('hidden');
   }
 }
@@ -509,6 +608,24 @@ function loop(ts) {
   if (gameOver || paused) return;
   const dt = ts - lastTime;
   lastTime = ts;
+
+  if (mods.sprint40) {
+    timeRemaining = Math.max(0, timeRemaining - dt);
+    if (timeRemaining <= 0) {
+      endGame('timeout');
+      return;
+    }
+    updateHUD();
+  }
+
+  if (mods.rising) {
+    garbageAccum += dt;
+    if (garbageAccum >= GARBAGE_INTERVAL) {
+      garbageAccum -= GARBAGE_INTERVAL;
+      pushGarbage();
+      if (gameOver) return;
+    }
+  }
 
   if (freezeRemaining > 0) {
     freezeRemaining = Math.max(0, freezeRemaining - dt);
@@ -530,13 +647,25 @@ function loop(ts) {
   animId = requestAnimationFrame(loop);
 }
 
+function applyPrefill() {
+  const patternRows = PREFILL_PATTERN.length;
+  for (let i = 0; i < patternRows; i++) {
+    const boardRow = ROWS - patternRows + i;
+    const patternRow = PREFILL_PATTERN[i];
+    for (let c = 0; c < COLS; c++)
+      if (patternRow[c] === '#') board[boardRow][c] = GARBAGE;
+  }
+}
+
 function init() {
   board = createBoard();
+  if (mods.prefill) applyPrefill();
   score = 0;
   lines = 0;
   level = 1;
   paused = false;
   gameOver = false;
+  running = true;
   dropInterval = 1000;
   dropAccum = 0;
   lastTime = performance.now();
@@ -544,19 +673,94 @@ function init() {
   pendingPower = false;
   pendingSingle = false;
   freezeRemaining = 0;
+  timeRemaining = SPRINT_MS;
+  garbageAccum = 0;
   clearTimeout(flashTimeout);
   powerFlashEl.classList.add('hidden');
   next = randomPiece();
   spawn();
+  overlayTitle.classList.remove('win');
+  powerSectionEl.classList.toggle('hidden', challengeActive);
+  challengeHudEl.classList.toggle('hidden', !mods.sprint40);
+  renderModsBadges();
   updateHUD();
+  modeMenuEl.classList.add('hidden');
+  overlayTitle.classList.remove('hidden');
+  overlayScore.classList.remove('hidden');
+  restartBtn.classList.remove('hidden');
   overlay.classList.add('hidden');
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
 }
 
+function renderModsBadges() {
+  modsBadgesEl.innerHTML = '';
+  if (!challengeActive) return;
+  for (const mod of MODS) {
+    if (!mods[mod.key]) continue;
+    const span = document.createElement('span');
+    span.className = 'mod-badge';
+    span.title = mod.title;
+    span.textContent = mod.icon;
+    modsBadgesEl.appendChild(span);
+  }
+}
+
+function buildModeMenu() {
+  selectedMods = {};
+  modeGridEl.innerHTML = '';
+  for (const mod of MODS) {
+    selectedMods[mod.key] = false;
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'mode-card';
+    card.dataset.key = mod.key;
+    card.innerHTML = `<span class="mode-card-icon">${mod.icon}</span>
+      <span class="mode-card-title">${mod.title}</span>
+      <span class="mode-card-desc">${mod.desc}</span>`;
+    card.addEventListener('click', () => {
+      selectedMods[mod.key] = !selectedMods[mod.key];
+      card.classList.toggle('selected', selectedMods[mod.key]);
+      updatePlayBtnLabel();
+    });
+    modeGridEl.appendChild(card);
+  }
+  updatePlayBtnLabel();
+}
+
+function updatePlayBtnLabel() {
+  const any = Object.values(selectedMods).some(Boolean);
+  playBtn.textContent = any ? 'JUGAR (DESAFÍO)' : 'JUGAR (CLÁSICO)';
+}
+
+function showMenu() {
+  running = false;
+  gameOver = false;
+  paused = false;
+  cancelAnimationFrame(animId);
+  for (const card of modeGridEl.children) {
+    const key = card.dataset.key;
+    selectedMods[key] = false;
+    card.classList.remove('selected');
+  }
+  updatePlayBtnLabel();
+  modeMenuEl.classList.remove('hidden');
+  overlayTitle.classList.add('hidden');
+  overlayScore.classList.add('hidden');
+  restartBtn.classList.add('hidden');
+  menuBtn.classList.add('hidden');
+  overlay.classList.remove('hidden');
+}
+
+function startGame() {
+  mods = { ...selectedMods };
+  challengeActive = Object.values(mods).some(Boolean);
+  init();
+}
+
 document.addEventListener('keydown', e => {
   if (e.code === 'KeyP') { togglePause(); return; }
-  if (paused || gameOver) return;
+  if (!running || paused || gameOver) return;
   switch (e.code) {
     case 'ArrowLeft':
       if (!collide(current.shape, current.x - 1, current.y)) current.x--;
@@ -579,7 +783,10 @@ document.addEventListener('keydown', e => {
   updateHUD();
 });
 
-restartBtn.addEventListener('click', init);
+restartBtn.addEventListener('click', startGame);
+playBtn.addEventListener('click', startGame);
+menuBtn.addEventListener('click', showMenu);
 
 initTheme();
-init();
+buildModeMenu();
+showMenu();

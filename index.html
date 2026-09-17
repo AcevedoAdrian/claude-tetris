@@ -12,8 +12,8 @@
     <div class="wrapper">
       <div class="game-container">
         <aside class="panel legend-panel">
-          <div class="panel-section controls legend">
-            <span class="label">POWER-UPS</span>
+          <details class="panel-section controls legend">
+            <summary class="label">POWER-UPS</summary>
             <ul class="legend-list">
               <li>
                 <span class="legend-icon">💣</span>
@@ -36,10 +36,10 @@
                 <div><strong>Congelar</strong><br>Detiene la caída automática durante 5 segundos (sigues pudiendo mover y rotar).</div>
               </li>
             </ul>
-          </div>
+          </details>
 
-          <div class="panel-section controls legend">
-            <span class="label">PIEZAS ESPECIALES</span>
+          <details class="panel-section controls legend">
+            <summary class="label">PIEZAS ESPECIALES</summary>
             <ul class="legend-list">
               <li>
                 <span class="legend-icon">➕</span>
@@ -62,7 +62,7 @@
                 <div><strong>1×1</strong><br>Un solo bloque. Premio automático: llega como pieza NEXT justo después de limpiar un Tetris (4 líneas de golpe).</div>
               </li>
             </ul>
-          </div>
+          </details>
         </aside>
 
         <canvas id="board" width="300" height="600"></canvas>
@@ -89,15 +89,22 @@
             <span class="value" id="level">1</span>
           </div>
 
-          <div class="panel-section">
+          <div class="panel-section" id="power-section">
             <span class="label">POWER-UP</span>
             <span class="power-badge" id="power-indicator">—</span>
             <span class="freeze-timer hidden" id="freeze-timer"></span>
           </div>
 
+          <div class="panel-section hidden" id="challenge-hud">
+            <span class="label">TIEMPO</span>
+            <span class="value time-left" id="time-left">2:00</span>
+            <span class="goal-progress" id="goal-progress">0 / 40</span>
+          </div>
+
           <div class="panel-section">
             <span class="label">NEXT</span>
             <canvas id="next-canvas" width="120" height="120"></canvas>
+            <div class="mods-badges" id="mods-badges"></div>
           </div>
 
           <div class="panel-section controls">
@@ -117,9 +124,17 @@
 
       <div id="overlay" class="overlay hidden">
         <div class="overlay-box">
+          <div id="mode-menu" class="mode-menu hidden">
+            <p class="mode-menu-title">ELIGE UN DESAFÍO</p>
+            <div class="mode-grid" id="mode-grid"></div>
+            <button id="play-btn" class="wide-btn">JUGAR (CLÁSICO)</button>
+          </div>
           <p id="overlay-title">GAME OVER</p>
           <p id="overlay-score"></p>
-          <button id="restart-btn">Reiniciar</button>
+          <div class="overlay-actions">
+            <button id="restart-btn">Reiniciar</button>
+            <button id="menu-btn" class="hidden">Cambiar modo</button>
+          </div>
         </div>
       </div>
     </div>
