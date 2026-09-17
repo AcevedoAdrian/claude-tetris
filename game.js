@@ -6,13 +6,13 @@ const BLOCK = 30;
 
 const COLORS = [
   null,
-  '#4dd0e1', // I - cyan
-  '#ffd54f', // O - yellow
-  '#ba68c8', // T - purple
-  '#81c784', // S - green
-  '#e57373', // Z - red
-  '#90caf9', // J - pale blue
-  '#ffb74d', // L - orange
+  '#00bcd4', // I - cyan
+  '#fdd835', // O - yellow
+  '#9c27b0', // T - purple
+  '#43a047', // S - green
+  '#e53935', // Z - red
+  '#3949ab', // J - blue
+  '#fb8c00', // L - orange
 ];
 
 const PIECES = [
@@ -183,6 +183,10 @@ function drawBlock(context, x, y, colorIndex, size, alpha) {
   // highlight
   context.fillStyle = 'rgba(255,255,255,0.12)';
   context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+  // dark edge for contrast against the piece color and board background
+  context.strokeStyle = 'rgba(0,0,0,0.35)';
+  context.lineWidth = 2;
+  context.strokeRect(x * size + 1, y * size + 1, size - 2, size - 2);
   context.globalAlpha = 1;
 }
 
