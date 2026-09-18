@@ -112,12 +112,16 @@ const bodyListeners = {};
 const documentListeners = {};
 const fakeBody = {
   classList: makeClassList(),
+  dataset: {},
   addEventListener(type, handler) { (bodyListeners[type] = bodyListeners[type] || []).push(handler); },
 };
+
+const overlayActionsEl = makeElement('overlay-actions');
 
 const fakeDocument = {
   body: fakeBody,
   getElementById: id => elements[id] || makeElement(id),
+  querySelector: sel => (sel === '.overlay-actions' ? overlayActionsEl : makeElement('dynamic')),
   createElement: () => makeElement('dynamic'),
   addEventListener(type, handler) { (documentListeners[type] = documentListeners[type] || []).push(handler); },
 };

@@ -101,8 +101,11 @@ for (const id of knownIds) idElements[id] = makeEl();
 
 const body = makeEl('body');
 
+const overlayActionsEl = makeEl();
+
 const document = {
   getElementById: id => idElements[id] || makeEl(),
+  querySelector: sel => (sel === '.overlay-actions' ? overlayActionsEl : makeEl()),
   createElement: tag => makeEl(tag),
   addEventListener: () => {},
   body,
