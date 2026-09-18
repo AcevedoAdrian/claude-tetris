@@ -68,12 +68,14 @@
         <canvas id="board" width="300" height="600"></canvas>
 
         <aside class="panel">
-          <div class="panel-section theme-toggle">
-            <span class="label">MODO CLARO</span>
-            <label class="switch">
-              <input type="checkbox" id="theme-toggle" />
-              <span class="slider"></span>
-            </label>
+          <div class="panel-section" id="skin-section">
+            <span class="label">SKIN</span>
+            <select id="skin-select">
+              <option value="retro">🟥 RETRO</option>
+              <option value="neon">💡 NEON</option>
+              <option value="pastel">🍬 PASTEL</option>
+              <option value="pixel">👾 PIXEL</option>
+            </select>
           </div>
 
           <div class="panel-section">
@@ -87,6 +89,11 @@
           <div class="panel-section">
             <span class="label">LEVEL</span>
             <span class="value" id="level">1</span>
+          </div>
+
+          <div class="panel-section" id="combo-section">
+            <span class="label">COMBO</span>
+            <span class="value combo-value hidden" id="combo-value">×0</span>
           </div>
 
           <div class="panel-section" id="power-section">
@@ -114,7 +121,7 @@
               <li><kbd>↑</kbd> rotar</li>
               <li><kbd>↓</kbd> bajar</li>
               <li><kbd>Space</kbd> caída</li>
-              <li><kbd>P</kbd> pausa</li>
+              <li><kbd>P</kbd> / <kbd>Esc</kbd> pausa</li>
             </ul>
           </div>
         </aside>
@@ -129,11 +136,40 @@
             <div class="mode-grid" id="mode-grid"></div>
             <button id="play-btn" class="wide-btn">JUGAR (CLÁSICO)</button>
           </div>
+          <div id="pause-menu" class="pause-menu hidden">
+            <p class="pause-menu-title">PAUSA</p>
+            <div class="pause-actions">
+              <button id="resume-btn">Reanudar</button>
+              <button id="pause-restart-btn">Reiniciar</button>
+              <button id="controls-btn">Ver controles</button>
+            </div>
+            <ul id="pause-controls" class="pause-controls hidden">
+              <li><kbd>←</kbd><kbd>→</kbd> mover</li>
+              <li><kbd>↑</kbd> / <kbd>X</kbd> rotar</li>
+              <li><kbd>↓</kbd> bajar</li>
+              <li><kbd>Space</kbd> caída</li>
+              <li><kbd>P</kbd> / <kbd>Esc</kbd> pausa</li>
+            </ul>
+            <div class="level-picker">
+              <label for="start-level" class="label">NIVEL INICIAL</label>
+              <select id="start-level"></select>
+            </div>
+          </div>
           <p id="overlay-title">GAME OVER</p>
           <p id="overlay-score"></p>
           <div class="overlay-actions">
             <button id="restart-btn">Reiniciar</button>
             <button id="menu-btn" class="hidden">Cambiar modo</button>
+          </div>
+          <div id="records-panel" class="records-panel hidden">
+            <p class="records-title">TOP 5</p>
+            <div id="records-list"></div>
+            <button id="reset-records-btn">Borrar records</button>
+          </div>
+          <div id="name-form" class="name-form hidden">
+            <p class="name-form-title">¡Entras en el top 5!</p>
+            <input id="player-name" maxlength="12" placeholder="Tu nombre" />
+            <button id="save-record-btn">Guardar</button>
           </div>
         </div>
       </div>
