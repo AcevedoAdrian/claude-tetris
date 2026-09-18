@@ -110,12 +110,36 @@ const challengeHudEl = document.getElementById('challenge-hud');
 const timeLeftEl = document.getElementById('time-left');
 const goalProgressEl = document.getElementById('goal-progress');
 const modsBadgesEl = document.getElementById('mods-badges');
+const pauseMenuEl = document.getElementById('pause-menu');
+const overlayActionsEl = document.querySelector('.overlay-actions');
+const resumeBtn = document.getElementById('resume-btn');
+const pauseRestartBtn = document.getElementById('pause-restart-btn');
+const controlsBtn = document.getElementById('controls-btn');
+const pauseControlsEl = document.getElementById('pause-controls');
+const startLevelSelect = document.getElementById('start-level');
 
 const THEME_KEY = 'tetris-theme';
+
+function storeGet(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw === null ? fallback : JSON.parse(raw);
+  } catch { return fallback; }
+}
+
+function storeSet(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* storage bloqueado */ }
+}
+
+const START_LEVEL_KEY = 'tetris-start-level';
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId, gridColor;
 let linesSincePower, pendingPower, pendingSingle, freezeRemaining, flashTimeout;
 let mods, challengeActive, running, timeRemaining, garbageAccum, selectedMods;
+let startLevel;
+let inputLockUntil = 0;
+let gameStartLevel; // nivel inicial "congelado" para la partida en curso (evita que cambiar
+                     // el selector de pausa altere retroactivamente una partida ya empezada)
 
 function applyTheme(isLight) {
   document.body.classList.toggle('light-mode', isLight);
@@ -130,6 +154,26 @@ function initTheme() {
 }
 
 themeToggle.addEventListener('change', () => applyTheme(themeToggle.checked));
+
+function buildStartLevelSelect() {
+  startLevelSelect.innerHTML = '';
+  for (let lvl = 1; lvl <= 15; lvl++) {
+    const option = document.createElement('option');
+    option.value = String(lvl);
+    option.textContent = String(lvl);
+    startLevelSelect.appendChild(option);
+  }
+}
+
+function syncStartLevelSelect() {
+  startLevelSelect.value = String(startLevel);
+}
+
+startLevelSelect.addEventListener('change', () => {
+  const val = Math.min(15, Math.max(1, Number(startLevelSelect.value) || 1));
+  startLevel = val;
+  storeSet(START_LEVEL_KEY, startLevel);
+});
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -346,7 +390,7 @@ function clearLines() {
   if (cleared) {
     lines += cleared;
     score += (LINE_SCORES[cleared] || 0) * level;
-    level = Math.floor(lines / 10) + 1;
+    level = gameStartLevel + Math.floor(lines / 10);
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
     if (!challengeActive) {
       linesSincePower += cleared;
@@ -584,6 +628,10 @@ function endGame(result = 'lose') {
   }
   overlayScore.textContent = `Puntuación: ${score.toLocaleString()}`;
   menuBtn.classList.remove('hidden');
+  pauseMenuEl.classList.add('hidden');
+  overlayTitle.classList.remove('hidden');
+  overlayScore.classList.remove('hidden');
+  overlayActionsEl.classList.remove('hidden');
   overlay.classList.remove('hidden');
 }
 
@@ -592,6 +640,8 @@ function togglePause() {
   paused = !paused;
   if (!paused) {
     overlay.classList.add('hidden');
+    document.activeElement?.blur();
+    inputLockUntil = performance.now() + 150;
     lastTime = performance.now();
     loop(lastTime);
   } else {
@@ -600,6 +650,11 @@ function togglePause() {
     overlayTitle.classList.remove('win');
     overlayScore.textContent = '';
     menuBtn.classList.add('hidden');
+    overlayTitle.classList.add('hidden');
+    overlayScore.classList.add('hidden');
+    overlayActionsEl.classList.add('hidden');
+    syncStartLevelSelect();
+    pauseMenuEl.classList.remove('hidden');
     overlay.classList.remove('hidden');
   }
 }
@@ -662,11 +717,12 @@ function init() {
   if (mods.prefill) applyPrefill();
   score = 0;
   lines = 0;
-  level = 1;
+  gameStartLevel = startLevel;
+  level = gameStartLevel;
   paused = false;
   gameOver = false;
   running = true;
-  dropInterval = 1000;
+  dropInterval = Math.max(100, 1000 - (gameStartLevel - 1) * 90);
   dropAccum = 0;
   lastTime = performance.now();
   linesSincePower = 0;
@@ -685,8 +741,10 @@ function init() {
   renderModsBadges();
   updateHUD();
   modeMenuEl.classList.add('hidden');
+  pauseMenuEl.classList.add('hidden');
   overlayTitle.classList.remove('hidden');
   overlayScore.classList.remove('hidden');
+  overlayActionsEl.classList.remove('hidden');
   restartBtn.classList.remove('hidden');
   overlay.classList.add('hidden');
   cancelAnimationFrame(animId);
@@ -745,8 +803,10 @@ function showMenu() {
   }
   updatePlayBtnLabel();
   modeMenuEl.classList.remove('hidden');
+  pauseMenuEl.classList.add('hidden');
   overlayTitle.classList.add('hidden');
   overlayScore.classList.add('hidden');
+  overlayActionsEl.classList.remove('hidden');
   restartBtn.classList.add('hidden');
   menuBtn.classList.add('hidden');
   overlay.classList.remove('hidden');
@@ -759,8 +819,21 @@ function startGame() {
 }
 
 document.addEventListener('keydown', e => {
-  if (e.code === 'KeyP') { togglePause(); return; }
-  if (!running || paused || gameOver) return;
+  if (e.code === 'KeyP' || e.code === 'Escape') {
+    if (e.repeat) return; // evita toggles dobles al mantener pulsado
+    togglePause();
+    return;
+  }
+  if (paused) {
+    // Mientras el menú de pausa está abierto no debe interactuar con el juego
+    // ni provocar scroll de página con las teclas de movimiento.
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
+      e.preventDefault();
+    }
+    return;
+  }
+  if (!running || gameOver) return;
+  if (performance.now() < inputLockUntil) return; // ignora input-fantasma justo al reanudar
   switch (e.code) {
     case 'ArrowLeft':
       if (!collide(current.shape, current.x - 1, current.y)) current.x--;
@@ -783,10 +856,17 @@ document.addEventListener('keydown', e => {
   updateHUD();
 });
 
+resumeBtn.addEventListener('click', togglePause);
+pauseRestartBtn.addEventListener('click', startGame);
+controlsBtn.addEventListener('click', () => pauseControlsEl.classList.toggle('hidden'));
+
 restartBtn.addEventListener('click', startGame);
 playBtn.addEventListener('click', startGame);
 menuBtn.addEventListener('click', showMenu);
 
+startLevel = Math.min(15, Math.max(1, storeGet(START_LEVEL_KEY, 1)));
 initTheme();
 buildModeMenu();
+buildStartLevelSelect();
+syncStartLevelSelect();
 showMenu();
