@@ -22,6 +22,25 @@ const COLORS = [
   '#5c5c6e', // 14 - basura (modo desafío)
 ];
 
+const NEON_COLORS = [
+  null,
+  '#00e5ff', '#ffea00', '#ff00e5', '#39ff14', '#ff1744',
+  '#2979ff', '#ff9100', '#fff59d', '#ff4081', '#1de9b6',
+  '#7c4dff', '#ffffff', '#616161', '#37474f',
+];
+const PASTEL_COLORS = [
+  null,
+  '#a8dadc', '#ffe8a3', '#d4a5e8', '#b8e0b0', '#f4a6a6',
+  '#aec6e8', '#ffcc99', '#fff2b2', '#f2b6c6', '#a3d9d3',
+  '#c9b8e8', '#ffffff', '#d9b8a3', '#c9c9d1',
+];
+const PIXEL_COLORS = [
+  null,
+  '#00b8d4', '#ffca28', '#ab47bc', '#66bb6a', '#ef5350',
+  '#42a5f5', '#ff7043', '#fff176', '#ec407a', '#26a69a',
+  '#7e57c2', '#ffffff', '#8d6e63', '#546e7a',
+];
+
 const PIECES = [
   null,
   [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]], // I
@@ -45,6 +64,13 @@ const LINE_SCORES = [0, 100, 300, 500, 800];
 const WILD = 8;                      // índice de bloque comodín (Tinte)
 const SINGLE = 12;                   // pieza 1×1, recompensa exclusiva de un Tetris
 const NO_ROTATE = new Set([SINGLE, 9, 13]); // 1×1, cruz "+" y 3×3 hueca: simétricas, no rotan
+
+const SKINS = {
+  retro:  { label: 'RETRO',  icon: '🟥', colors: COLORS,        style: 'flat'  },
+  neon:   { label: 'NEON',   icon: '💡', colors: NEON_COLORS,   style: 'glow'  },
+  pastel: { label: 'PASTEL', icon: '🍬', colors: PASTEL_COLORS, style: 'round' },
+  pixel:  { label: 'PIXEL',  icon: '👾', colors: PIXEL_COLORS,  style: 'pixel' },
+};
 // Pesos de aparición de cada tipo de pieza (la 12/SINGLE no entra: solo llega como recompensa).
 const PIECE_WEIGHTS = { 1: 10, 2: 10, 3: 10, 4: 10, 5: 10, 6: 10, 7: 10, 9: 8, 10: 8, 11: 8, 13: 6 };
 const POWERUP_LINE_INTERVAL = 5;     // cada cuántas líneas eliminadas aparece una pieza especial
@@ -97,7 +123,7 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
-const themeToggle = document.getElementById('theme-toggle');
+const skinSelect = document.getElementById('skin-select');
 const powerIndicatorEl = document.getElementById('power-indicator');
 const freezeTimerEl = document.getElementById('freeze-timer');
 const powerFlashEl = document.getElementById('power-flash');
@@ -111,25 +137,38 @@ const timeLeftEl = document.getElementById('time-left');
 const goalProgressEl = document.getElementById('goal-progress');
 const modsBadgesEl = document.getElementById('mods-badges');
 
-const THEME_KEY = 'tetris-theme';
+function storeGet(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw === null ? fallback : JSON.parse(raw);
+  } catch { return fallback; }
+}
+
+function storeSet(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* storage bloqueado */ }
+}
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId, gridColor;
 let linesSincePower, pendingPower, pendingSingle, freezeRemaining, flashTimeout;
 let mods, challengeActive, running, timeRemaining, garbageAccum, selectedMods;
+let activeSkin, activeColors;
 
-function applyTheme(isLight) {
-  document.body.classList.toggle('light-mode', isLight);
-  themeToggle.checked = isLight;
-  localStorage.setItem(THEME_KEY, isLight ? 'light' : 'dark');
+function applySkin(key) {
+  if (!SKINS[key]) key = 'retro';
+  activeSkin = key;
+  activeColors = SKINS[key].colors;
+  document.body.dataset.skin = key;
+  if (skinSelect) skinSelect.value = key;
+  storeSet('tetris-skin', key);
   gridColor = getComputedStyle(document.body).getPropertyValue('--grid-color').trim();
+  if (typeof next !== 'undefined' && next) drawNext();
+  if (typeof running !== 'undefined' && running && !paused) draw();
 }
 
-function initTheme() {
-  const saved = localStorage.getItem(THEME_KEY);
-  applyTheme(saved === 'light');
+function initSkin() {
+  const saved = storeGet('tetris-skin', 'retro');
+  applySkin(SKINS[saved] ? saved : 'retro');
 }
-
-themeToggle.addEventListener('change', () => applyTheme(themeToggle.checked));
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -459,19 +498,69 @@ function flashPower(power) {
 
 function drawBlock(context, x, y, colorIndex, size, alpha) {
   if (!colorIndex) return;
-  const color = COLORS[colorIndex];
+  const color = activeColors[colorIndex] || COLORS[colorIndex];
   let a = alpha ?? 1;
   if (colorIndex === WILD) {
     // los comodines "respiran" para distinguirse del resto de bloques
     a *= 0.65 + 0.35 * Math.sin(performance.now() / 220);
   }
   context.globalAlpha = a;
+  const style = SKINS[activeSkin] ? SKINS[activeSkin].style : 'flat';
+  switch (style) {
+    case 'glow':  drawGlowBlock(context, x, y, color, size); break;
+    case 'round': drawRoundBlock(context, x, y, color, size); break;
+    case 'pixel': drawPixelBlock(context, x, y, color, size); break;
+    default:      drawFlatBlock(context, x, y, color, size); break;
+  }
+  context.globalAlpha = 1;
+}
+
+function drawFlatBlock(context, x, y, color, size) {
   context.fillStyle = color;
   context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
   // highlight
   context.fillStyle = 'rgba(255,255,255,0.12)';
   context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
-  context.globalAlpha = 1;
+}
+
+function drawGlowBlock(context, x, y, color, size) {
+  context.save();
+  context.shadowColor = color;
+  context.shadowBlur = size * 0.4;
+  context.fillStyle = color;
+  context.fillRect(x * size + 2, y * size + 2, size - 4, size - 4);
+  context.shadowBlur = 0;
+  context.strokeStyle = color;
+  context.lineWidth = 2;
+  context.strokeRect(x * size + 1.5, y * size + 1.5, size - 3, size - 3);
+  context.restore();
+}
+
+function drawRoundBlock(context, x, y, color, size) {
+  const px = x * size + 1.5, py = y * size + 1.5, s = size - 3, r = size * 0.25;
+  context.fillStyle = color;
+  if (typeof context.roundRect === 'function') {
+    context.beginPath();
+    context.roundRect(px, py, s, s, r);
+    context.fill();
+  } else {
+    context.fillRect(px, py, s, s);
+  }
+}
+
+function drawPixelBlock(context, x, y, color, size) {
+  context.fillStyle = color;
+  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
+  const sub = (size - 2) / 6;
+  for (let i = 0; i < 6; i++) {
+    for (let j = 0; j < 6; j++) {
+      context.fillStyle = (i + j) % 2 === 0 ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.18)';
+      context.fillRect(x * size + 1 + i * sub, y * size + 1 + j * sub, sub, sub);
+    }
+  }
+  context.strokeStyle = 'rgba(0,0,0,0.35)';
+  context.lineWidth = 2;
+  context.strokeRect(x * size + 1, y * size + 1, size - 2, size - 2);
 }
 
 function drawPowerOverlay(context, shape, ox, oy, size, power) {
@@ -786,7 +875,8 @@ document.addEventListener('keydown', e => {
 restartBtn.addEventListener('click', startGame);
 playBtn.addEventListener('click', startGame);
 menuBtn.addEventListener('click', showMenu);
+skinSelect.addEventListener('change', () => applySkin(skinSelect.value));
 
-initTheme();
+initSkin();
 buildModeMenu();
 showMenu();

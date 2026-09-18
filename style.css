@@ -24,8 +24,6 @@
   --restart-bg: #7aa2f7;
   --restart-color: #0f0f17;
   --restart-hover: #9bbdff;
-  --switch-bg: #22223a;
-  --switch-knob: #7aa2f7;
   --power-glow: #fff59d;
   --power-badge-bg: rgba(255, 245, 157, 0.1);
   --power-badge-border: #6b6b3a;
@@ -35,35 +33,91 @@
   --time-low-color: #e57373;
 }
 
-body.light-mode {
-  --bg-color: #f2f2f7;
-  --text-color: #1c1c28;
-  --title-color: #3457c9;
-  --board-border: #c9c9d8;
-  --board-bg: #ffffff;
-  --board-shadow: rgba(0, 0, 0, 0.15);
-  --label-color: #6b6b85;
-  --value-color: #3457c9;
-  --controls-color: #4a4a5a;
-  --kbd-bg: #e4e4ef;
-  --kbd-border: #c2c2d6;
-  --kbd-color: #333;
-  --grid-color: #dcdce8;
-  --overlay-bg: rgba(242, 242, 247, 0.85);
-  --overlay-title: #c0392b;
-  --overlay-score: #3457c9;
-  --restart-bg: #3457c9;
+body[data-skin="neon"] {
+  --bg-color: #000000;
+  --text-color: #e0fbff;
+  --title-color: #00e5ff;
+  --board-border: #1a1a2a;
+  --board-bg: #05050a;
+  --board-shadow: rgba(0, 229, 255, 0.35);
+  --label-color: #5a5a7a;
+  --value-color: #ff00e5;
+  --controls-color: #9a9ac0;
+  --kbd-bg: #12121f;
+  --kbd-border: #2a2a4a;
+  --kbd-color: #00e5ff;
+  --grid-color: #14141f;
+  --overlay-bg: rgba(0, 0, 0, 0.55);
+  --overlay-title: #ff1744;
+  --overlay-score: #00e5ff;
+  --restart-bg: #ff00e5;
+  --restart-color: #000000;
+  --restart-hover: #ff5cf1;
+  --power-glow: #39ff14;
+  --power-badge-bg: rgba(57, 255, 20, 0.1);
+  --power-badge-border: #39ff14;
+  --freeze-color: #00e5ff;
+  --flash-color: #fff59d;
+  --win-color: #39ff14;
+  --time-low-color: #ff1744;
+}
+
+body[data-skin="pastel"] {
+  --bg-color: #faf3ec;
+  --text-color: #5a4a52;
+  --title-color: #d68fb0;
+  --board-border: #e6d5df;
+  --board-bg: #fffaf5;
+  --board-shadow: rgba(214, 143, 176, 0.15);
+  --label-color: #b8a3ae;
+  --value-color: #a58fd6;
+  --controls-color: #9a8790;
+  --kbd-bg: #f2e4ec;
+  --kbd-border: #e6d5df;
+  --kbd-color: #7a6570;
+  --grid-color: #f0e5e9;
+  --overlay-bg: rgba(250, 243, 236, 0.85);
+  --overlay-title: #e88ba0;
+  --overlay-score: #a58fd6;
+  --restart-bg: #d68fb0;
   --restart-color: #ffffff;
-  --restart-hover: #5578e0;
-  --switch-bg: #c2c2d6;
-  --switch-knob: #3457c9;
-  --power-glow: #c9a400;
-  --power-badge-bg: rgba(201, 164, 0, 0.12);
-  --power-badge-border: #c9a400;
-  --freeze-color: #2a8fa3;
-  --flash-color: #8a6d00;
-  --win-color: #2e8b3d;
-  --time-low-color: #c0392b;
+  --restart-hover: #e3a5c1;
+  --power-glow: #f4c95d;
+  --power-badge-bg: rgba(244, 201, 93, 0.15);
+  --power-badge-border: #f4c95d;
+  --freeze-color: #7fc4c9;
+  --flash-color: #e8a87c;
+  --win-color: #8fc98f;
+  --time-low-color: #e88ba0;
+}
+
+body[data-skin="pixel"] {
+  --bg-color: #2b2b2b;
+  --text-color: #d4d4c8;
+  --title-color: #8bc34a;
+  --board-border: #4a4a3a;
+  --board-bg: #1e1e1e;
+  --board-shadow: rgba(0, 0, 0, 0.5);
+  --label-color: #6a6a5a;
+  --value-color: #ffca28;
+  --controls-color: #9a9a8a;
+  --kbd-bg: #3a3a2a;
+  --kbd-border: #4a4a3a;
+  --kbd-color: #d4d4c8;
+  --grid-color: #3a3a2a;
+  --overlay-bg: rgba(20, 20, 20, 0.85);
+  --overlay-title: #ef5350;
+  --overlay-score: #ffca28;
+  --restart-bg: #8bc34a;
+  --restart-color: #1e1e1e;
+  --restart-hover: #a3d666;
+  --power-glow: #fff176;
+  --power-badge-bg: rgba(255, 241, 118, 0.12);
+  --power-badge-border: #fff176;
+  --freeze-color: #26a69a;
+  --flash-color: #fff176;
+  --win-color: #8bc34a;
+  --time-low-color: #ef5350;
 }
 
 body {
@@ -274,50 +328,16 @@ body {
   100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
 }
 
-/* ---- Toggle de tema ---- */
-.theme-toggle {
-  flex-direction: row !important;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 40px;
-  height: 22px;
-  flex-shrink: 0;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.switch .slider {
-  position: absolute;
+/* ---- Selector de skin ---- */
+#skin-select {
+  background: var(--kbd-bg);
+  color: var(--text-color);
+  border: 1px solid var(--kbd-border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-family: inherit;
   cursor: pointer;
-  inset: 0;
-  background: var(--switch-bg);
-  border-radius: 22px;
-  transition: background 0.2s;
-}
-
-.switch .slider::before {
-  content: '';
-  position: absolute;
-  height: 16px;
-  width: 16px;
-  left: 3px;
-  bottom: 3px;
-  background: var(--switch-knob);
-  border-radius: 50%;
-  transition: transform 0.2s;
-}
-
-.switch input:checked + .slider::before {
-  transform: translateX(18px);
 }
 
 /* ---- Controles ---- */
