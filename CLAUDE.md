@@ -33,7 +33,8 @@ Three files cooperate directly, no modules/imports:
 - **Collision**: `collide(shape, ox, oy)` checks board bounds and existing fixed cells.
 - **Game loop**: `loop(ts)` runs via `requestAnimationFrame`, accumulates elapsed time in `dropAccum`, and advances the piece by one row once `dropInterval` is exceeded — otherwise calls `lockPiece()`.
 - **Locking/clearing**: `lockPiece()` → `merge()` writes the piece into `board`, then `clearLines()` removes completed rows bottom-up and unshifts empty rows at the top.
-- **Scoring**: `LINE_SCORES = [0, 100, 300, 500, 800]` multiplied by `level`; hard drop adds 2 pts/row dropped, soft drop adds 1 pt/row.
+- **Scoring**: `LINE_SCORES = [0, 100, 300, 500, 800]` multiplied by `level`; hard drop adds 2 pts/row dropped, soft drop adds 1 pt/row. **Combo**: consecutive `lockPiece()` calls that each clear at least one line increment `combo` (tracked via `registerCombo()`), adding `50 * (combo - 1) * level` bonus points per lock past the first; a lock that clears nothing resets `combo` to 0, while `maxCombo` retains the run's peak.
+- **Records**: a local top-5 high-score table and best-combo/best-lines marks persist in `localStorage` (`tetris-records`, `tetris-best`) via the `storeGet`/`storeSet` helpers, shown on the start screen and game-over overlay.
 - **Level/speed**: level = `floor(lines / 10) + 1`; `dropInterval = max(100, 1000 - (level-1)*90)` ms.
 - **Ghost piece**: `ghostY()` projects the current piece straight down to its landing row; drawn with `globalAlpha = 0.2` in `draw()`.
 - **Game over**: triggered in `spawn()` when a freshly spawned piece immediately collides.

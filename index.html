@@ -89,6 +89,11 @@
             <span class="value" id="level">1</span>
           </div>
 
+          <div class="panel-section" id="combo-section">
+            <span class="label">COMBO</span>
+            <span class="value combo-value hidden" id="combo-value">×0</span>
+          </div>
+
           <div class="panel-section" id="power-section">
             <span class="label">POWER-UP</span>
             <span class="power-badge" id="power-indicator">—</span>
@@ -134,6 +139,16 @@
           <div class="overlay-actions">
             <button id="restart-btn">Reiniciar</button>
             <button id="menu-btn" class="hidden">Cambiar modo</button>
+          </div>
+          <div id="records-panel" class="records-panel hidden">
+            <p class="records-title">TOP 5</p>
+            <div id="records-list"></div>
+            <button id="reset-records-btn">Borrar records</button>
+          </div>
+          <div id="name-form" class="name-form hidden">
+            <p class="name-form-title">¡Entras en el top 5!</p>
+            <input id="player-name" maxlength="12" placeholder="Tu nombre" />
+            <button id="save-record-btn">Guardar</button>
           </div>
         </div>
       </div>
