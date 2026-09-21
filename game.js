@@ -123,8 +123,20 @@ const gameoverExtraEl = document.getElementById('gameover-extra');
 const gameoverScoresEl = document.getElementById('gameover-scores');
 const nameEntryEl = document.getElementById('name-entry');
 const nameInputEl = document.getElementById('name-input');
+const START_LEVEL_KEY = 'tetris-start-level';
+const MAX_START_LEVEL = 15;
+
+// Elementos del menú de pausa
+const pauseMenuEl = document.getElementById('pause-menu');
+const resumeBtn = document.getElementById('resume-btn');
+const pauseRestartBtn = document.getElementById('pause-restart-btn');
+const controlsToggleBtn = document.getElementById('controls-toggle-btn');
+const pauseControlsEl = document.getElementById('pause-controls');
+const startLevelSelect = document.getElementById('start-level-select');
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId, gridColor;
+let startLevel = 1;          // nivel inicial de la partida en curso
+let selectedStartLevel = 1;  // nivel elegido para la PRÓXIMA partida
 let linesSincePower, pendingPower, pendingSingle, freezeRemaining, flashTimeout;
 let gameRecordFlags = {};
 let combo, maxCombo, lockCleared, pendingEntry, lastSavedIndex;
@@ -480,7 +492,7 @@ function clearLines() {
   if (cleared) {
     lines += cleared;
     score += (LINE_SCORES[cleared] || 0) * level;
-    level = Math.floor(lines / 10) + 1;
+    level = startLevel + Math.floor(lines / 10);
     // Combo: +1 una sola vez por bloqueo (GRAVITY llama dos veces a clearLines).
     // Bonus = COMBO_BONUS × (combo - 1) × level: el 2.º bloqueo consecutivo con línea da 50 × level.
     if (!lockCleared) {
@@ -752,21 +764,53 @@ function endGame(result = 'lose') {
   overlay.classList.remove('hidden');
 }
 
+// Lee el nivel inicial guardado (1–MAX_START_LEVEL)
+function loadStartLevel() {
+  let n = 1;
+  try { n = parseInt(localStorage.getItem(START_LEVEL_KEY), 10); } catch (_) { /* sin storage */ }
+  selectedStartLevel = Math.min(MAX_START_LEVEL, Math.max(1, n || 1));
+}
+
+function buildPauseMenu() {
+  for (let i = 1; i <= MAX_START_LEVEL; i++) {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = i;
+    startLevelSelect.appendChild(opt);
+  }
+  startLevelSelect.value = selectedStartLevel;
+}
+
+// Oculta el menú de pausa y restaura el estado normal del overlay
+function hidePauseMenu() {
+  pauseMenuEl.classList.add('hidden');
+  pauseControlsEl.classList.add('hidden');
+  controlsToggleBtn.setAttribute('aria-expanded', 'false');
+  overlayTitle.classList.remove('hidden');
+  overlayScore.classList.remove('hidden');
+  restartBtn.classList.remove('hidden');
+}
+
 function togglePause() {
   if (!running || gameOver) return;
   paused = !paused;
   if (!paused) {
+    hidePauseMenu();
     overlay.classList.add('hidden');
+    if (document.activeElement) document.activeElement.blur();
     lastTime = performance.now();
     loop(lastTime);
   } else {
     cancelAnimationFrame(animId);
-    overlayTitle.textContent = 'PAUSA';
-    overlayTitle.classList.remove('win');
-    overlayScore.textContent = '';
+    overlayTitle.classList.add('hidden');
+    overlayScore.classList.add('hidden');
+    restartBtn.classList.add('hidden');
     gameoverExtraEl.classList.add('hidden');
     menuBtn.classList.add('hidden');
+    startLevelSelect.value = selectedStartLevel;
+    pauseMenuEl.classList.remove('hidden');
     overlay.classList.remove('hidden');
+    resumeBtn.focus();
   }
 }
 
@@ -828,11 +872,12 @@ function init() {
   if (mods.prefill) applyPrefill();
   score = 0;
   lines = 0;
-  level = 1;
+  startLevel = selectedStartLevel;
+  level = startLevel;
   paused = false;
   gameOver = false;
   running = true;
-  dropInterval = 1000;
+  dropInterval = Math.max(100, 1000 - (level - 1) * 90);
   dropAccum = 0;
   lastTime = performance.now();
   linesSincePower = 0;
@@ -858,9 +903,8 @@ function init() {
   renderModsBadges();
   updateHUD();
   modeMenuEl.classList.add('hidden');
-  overlayTitle.classList.remove('hidden');
-  overlayScore.classList.remove('hidden');
-  restartBtn.classList.remove('hidden');
+  hidePauseMenu();
+  if (document.activeElement) document.activeElement.blur();
   overlay.classList.add('hidden');
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
@@ -920,6 +964,7 @@ function showMenu() {
   gameoverExtraEl.classList.add('hidden');
   pendingEntry = null;
   renderScores(menuScoresEl);
+  pauseMenuEl.classList.add('hidden');
   modeMenuEl.classList.remove('hidden');
   overlayTitle.classList.add('hidden');
   overlayScore.classList.add('hidden');
@@ -936,8 +981,16 @@ function startGame() {
 
 document.addEventListener('keydown', e => {
   if (e.target && e.target.tagName === 'INPUT') return; // escribiendo el nombre: no capturar teclas
-  if (e.code === 'KeyP') { togglePause(); return; }
-  if (!running || paused || gameOver) return;
+  if (e.code === 'KeyP' || e.code === 'Escape') { togglePause(); return; }
+  if (paused) {
+    // Menú abierto: las teclas de juego no actúan ni activan el botón enfocado
+    if (e.target !== startLevelSelect &&
+        ['Space', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'KeyX'].includes(e.code)) {
+      e.preventDefault();
+    }
+    return;
+  }
+  if (!running || gameOver) return;
   switch (e.code) {
     case 'ArrowLeft':
       if (!collide(current.shape, current.x - 1, current.y)) current.x--;
@@ -961,10 +1014,28 @@ document.addEventListener('keydown', e => {
 });
 
 nameEntryEl.addEventListener('submit', submitScore);
+// Evita que Space (keyup) active el botón enfocado con el menú de pausa abierto
+document.addEventListener('keyup', e => {
+  if (paused && e.code === 'Space' && e.target !== startLevelSelect) e.preventDefault();
+});
+
 restartBtn.addEventListener('click', startGame);
+resumeBtn.addEventListener('click', togglePause);
+pauseRestartBtn.addEventListener('click', startGame);
+controlsToggleBtn.addEventListener('click', () => {
+  const open = pauseControlsEl.classList.toggle('hidden') === false;
+  controlsToggleBtn.setAttribute('aria-expanded', String(open));
+});
+startLevelSelect.addEventListener('change', () => {
+  selectedStartLevel = parseInt(startLevelSelect.value, 10);
+  try { localStorage.setItem(START_LEVEL_KEY, selectedStartLevel); } catch (_) { /* sin storage */ }
+  startLevelSelect.blur();
+});
 playBtn.addEventListener('click', startGame);
 menuBtn.addEventListener('click', showMenu);
 
 initTheme();
+loadStartLevel();
+buildPauseMenu();
 buildModeMenu();
 showMenu();
