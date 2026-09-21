@@ -89,6 +89,11 @@
             <span class="value" id="level">1</span>
           </div>
 
+          <div class="panel-section">
+            <span class="label">COMBO</span>
+            <span class="value" id="combo">0</span>
+          </div>
+
           <div class="panel-section" id="power-section">
             <span class="label">POWER-UP</span>
             <span class="power-badge" id="power-indicator">—</span>
@@ -128,9 +133,20 @@
             <p class="mode-menu-title">ELIGE UN DESAFÍO</p>
             <div class="mode-grid" id="mode-grid"></div>
             <button id="play-btn" class="wide-btn">JUGAR (CLÁSICO)</button>
+            <div id="menu-scores" class="scores"></div>
           </div>
           <p id="overlay-title">GAME OVER</p>
           <p id="overlay-score"></p>
+          <div id="gameover-extra" class="hidden">
+            <form id="name-entry" class="name-entry hidden" autocomplete="off">
+              <label for="name-input">¡Entras en el top 5! Tu nombre:</label>
+              <div class="name-row">
+                <input type="text" id="name-input" maxlength="12" placeholder="Jugador" />
+                <button type="submit" id="save-score-btn">Guardar</button>
+              </div>
+            </form>
+            <div id="gameover-scores" class="scores"></div>
+          </div>
           <div class="overlay-actions">
             <button id="restart-btn">Reiniciar</button>
             <button id="menu-btn" class="hidden">Cambiar modo</button>
