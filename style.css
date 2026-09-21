@@ -394,7 +394,8 @@ kbd {
 
 #restart-btn,
 #menu-btn,
-#play-btn {
+#play-btn,
+.wide-btn {
   margin-top: 8px;
   background: var(--restart-bg);
   color: var(--restart-color);
@@ -410,7 +411,8 @@ kbd {
 
 #restart-btn:hover,
 #menu-btn:hover,
-#play-btn:hover {
+#play-btn:hover,
+.wide-btn:hover {
   background: var(--restart-hover);
 }
 
@@ -515,4 +517,65 @@ kbd {
   border: 1px solid var(--power-badge-border);
   border-radius: 4px;
   padding: 2px 5px;
+}
+
+/* ---- Menú de pausa ---- */
+.pause-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 220px;
+}
+
+.pause-menu.hidden {
+  display: none;
+}
+
+.pause-menu .wide-btn.secondary {
+  background: transparent;
+  color: var(--value-color);
+  border: 1px solid var(--restart-bg);
+}
+
+.level-select {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-color);
+}
+
+.level-select select {
+  background: var(--kbd-bg);
+  color: var(--text-color);
+  border: 1px solid var(--kbd-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: inherit;
+}
+
+.pause-controls {
+  list-style: none;
+  text-align: left;
+  font-size: 12px;
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.pause-controls.hidden {
+  display: none;
+}
+
+.level-hint {
+  font-size: 11px;
+  color: var(--overlay-score);
+  min-height: 14px;
 }
