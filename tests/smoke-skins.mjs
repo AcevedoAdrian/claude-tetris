@@ -103,6 +103,7 @@ const body = makeEl('body');
 
 const document = {
   getElementById: id => idElements[id] || makeEl(),
+  querySelector: () => makeEl(),
   createElement: tag => makeEl(tag),
   addEventListener: () => {},
   body,

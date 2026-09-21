@@ -40,7 +40,7 @@ Three files cooperate directly, no modules/imports:
 - **Skins**: `SKINS` maps `retro|neon|pastel|pixel` to a 15-entry color palette and a draw `style`. `applySkin(key)`/`initSkin()` set `activeSkin`/`activeColors`, toggle `body.dataset.skin` (drives the CSS variable overrides above), and persist to `localStorage` (`tetris-skin`). `drawBlock(context, x, y, colorIndex, size, alpha)` is a dispatcher that keeps its exact signature but delegates the actual fill to `drawFlatBlock`/`drawGlowBlock`/`drawRoundBlock`/`drawPixelBlock` based on `SKINS[activeSkin].style`.
 - **Game over**: triggered in `spawn()` when a freshly spawned piece immediately collides.
 
-Flow: `init()` builds the board, seeds `next`, calls `spawn()`, and starts `loop()` via `requestAnimationFrame`. Keyboard input is handled by a single `keydown` listener switching on `e.code` (arrows for move/soft-drop, `ArrowUp`/`KeyX` to rotate, `Space` for hard drop, `KeyP` to pause). The restart button re-invokes `init()`.
+Flow: `init()` builds the board, seeds `next`, calls `spawn()`, and starts `loop()` via `requestAnimationFrame`. Keyboard input is handled by a single `keydown` listener switching on `e.code` (arrows for move/soft-drop, `ArrowUp`/`KeyX` to rotate, `Space` for hard drop, `KeyP`/`Escape` to open a pause menu with resume/restart/controls/starting-level options). The restart button re-invokes `init()`.
 
 ### Tunable constants (top of `game.js`)
 

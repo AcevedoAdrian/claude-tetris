@@ -119,6 +119,7 @@ const fakeBody = {
 const fakeDocument = {
   body: fakeBody,
   getElementById: id => elements[id] || makeElement(id),
+  querySelector: () => makeElement('query'),
   createElement: () => makeElement('dynamic'),
   addEventListener(type, handler) { (documentListeners[type] = documentListeners[type] || []).push(handler); },
 };

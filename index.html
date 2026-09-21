@@ -121,7 +121,7 @@
               <li><kbd>↑</kbd> rotar</li>
               <li><kbd>↓</kbd> bajar</li>
               <li><kbd>Space</kbd> caída</li>
-              <li><kbd>P</kbd> pausa</li>
+              <li><kbd>P</kbd> / <kbd>Esc</kbd> pausa</li>
             </ul>
           </div>
         </aside>
@@ -135,6 +135,25 @@
             <p class="mode-menu-title">ELIGE UN DESAFÍO</p>
             <div class="mode-grid" id="mode-grid"></div>
             <button id="play-btn" class="wide-btn">JUGAR (CLÁSICO)</button>
+          </div>
+          <div id="pause-menu" class="pause-menu hidden">
+            <p class="pause-menu-title">PAUSA</p>
+            <div class="pause-actions">
+              <button id="resume-btn">Reanudar</button>
+              <button id="pause-restart-btn">Reiniciar</button>
+              <button id="controls-btn">Ver controles</button>
+            </div>
+            <ul id="pause-controls" class="pause-controls hidden">
+              <li><kbd>←</kbd><kbd>→</kbd> mover</li>
+              <li><kbd>↑</kbd> / <kbd>X</kbd> rotar</li>
+              <li><kbd>↓</kbd> bajar</li>
+              <li><kbd>Space</kbd> caída</li>
+              <li><kbd>P</kbd> / <kbd>Esc</kbd> pausa</li>
+            </ul>
+            <div class="level-picker">
+              <label for="start-level" class="label">NIVEL INICIAL</label>
+              <select id="start-level"></select>
+            </div>
           </div>
           <p id="overlay-title">GAME OVER</p>
           <p id="overlay-score"></p>
