@@ -320,6 +320,149 @@ body {
   transform: translateX(18px);
 }
 
+/* ---- Selector de skin ---- */
+.skin-picker select {
+  width: 100%;
+  margin-top: 6px;
+  padding: 6px 8px;
+  background: var(--kbd-bg);
+  color: var(--text-color);
+  border: 1px solid var(--kbd-border);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.skin-picker select:focus-visible {
+  outline: 2px solid var(--title-color);
+  outline-offset: 1px;
+}
+
+/* ---- Skins (retro = valores por defecto de :root / body.light-mode) ---- */
+/* Neon */
+body[data-skin="neon"] {
+  --bg-color: #000000;
+  --title-color: #00f0ff;
+  --board-border: #00f0ff;
+  --board-bg: #02020a;
+  --board-shadow: rgba(0, 240, 255, 0.45);
+  --value-color: #39ff14;
+  --grid-color: #0b1a2a;
+  --kbd-bg: #05050f;
+  --kbd-border: #00f0ff;
+  --restart-bg: #d500f9;
+  --restart-color: #ffffff;
+  --restart-hover: #ea60ff;
+  --switch-knob: #00f0ff;
+  --overlay-title: #ff1744;
+  --overlay-score: #39ff14;
+}
+
+body[data-skin="neon"].light-mode {
+  --bg-color: #e8eaf0;
+  --title-color: #008a99;
+  --board-border: #008a99;
+  --board-bg: #0a0a14;
+  --board-shadow: rgba(0, 138, 153, 0.35);
+  --value-color: #008a99;
+  --grid-color: #1a2436;
+  --kbd-bg: #dfe3ec;
+  --kbd-border: #008a99;
+  --restart-bg: #a100c2;
+  --restart-hover: #c440e0;
+  --switch-knob: #008a99;
+  --overlay-score: #008a99;
+}
+
+/* Pastel */
+body[data-skin="pastel"] {
+  --bg-color: #2b2836;
+  --title-color: #f5b8d0;
+  --board-border: #4a4560;
+  --board-bg: #35323f;
+  --board-shadow: rgba(0, 0, 0, 0.4);
+  --value-color: #a8e6ef;
+  --grid-color: #403c4d;
+  --kbd-bg: #3d3950;
+  --kbd-border: #58526e;
+  --restart-bg: #f5b8d0;
+  --restart-color: #2b2836;
+  --restart-hover: #ffd0e2;
+  --switch-knob: #f5b8d0;
+  --overlay-title: #f5b8b8;
+  --overlay-score: #a8e6ef;
+}
+
+body[data-skin="pastel"].light-mode {
+  --bg-color: #fdf3f7;
+  --title-color: #d4739f;
+  --board-border: #efd0de;
+  --board-bg: #fffafc;
+  --board-shadow: rgba(212, 115, 159, 0.2);
+  --value-color: #d4739f;
+  --grid-color: #f3e3ea;
+  --kbd-bg: #f6e6ee;
+  --kbd-border: #e6c8d6;
+  --restart-bg: #d4739f;
+  --restart-hover: #e08fb3;
+  --switch-knob: #d4739f;
+  --overlay-title: #d46a6a;
+  --overlay-score: #d4739f;
+}
+
+body[data-skin="pastel"] #board,
+body[data-skin="pastel"] .skin-picker select {
+  border-radius: 14px;
+}
+
+/* Pixel art */
+body[data-skin="pixel"] {
+  --bg-color: #14101f;
+  --title-color: #fbc02d;
+  --board-border: #6a5acd;
+  --board-bg: #0d0a16;
+  --board-shadow: rgba(0, 0, 0, 0.7);
+  --value-color: #43a047;
+  --grid-color: #1c1730;
+  --kbd-bg: #1c1730;
+  --kbd-border: #6a5acd;
+  --restart-bg: #e53935;
+  --restart-color: #ffffff;
+  --restart-hover: #ef5350;
+  --switch-knob: #fbc02d;
+  --overlay-title: #e53935;
+  --overlay-score: #fbc02d;
+}
+
+body[data-skin="pixel"].light-mode {
+  --bg-color: #e9e2cf;
+  --title-color: #7b1fa2;
+  --board-border: #3b2f5e;
+  --board-bg: #f6f0dc;
+  --board-shadow: rgba(59, 47, 94, 0.3);
+  --value-color: #2e7d32;
+  --grid-color: #ddd5bb;
+  --kbd-bg: #ddd5bb;
+  --kbd-border: #3b2f5e;
+  --restart-bg: #c62828;
+  --restart-hover: #e04848;
+  --switch-knob: #7b1fa2;
+  --overlay-title: #c62828;
+  --overlay-score: #7b1fa2;
+}
+
+body[data-skin="pixel"] #board {
+  border-width: 3px;
+  border-radius: 0;
+  image-rendering: pixelated;
+}
+
+body[data-skin="pixel"] .skin-picker select {
+  border-radius: 0;
+  border-width: 2px;
+}
+
 /* ---- Controles ---- */
 .controls ul {
   list-style: none;
