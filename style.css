@@ -665,3 +665,43 @@ kbd {
   color: var(--text-color);
   font: inherit;
 }
+
+/* ---- Skins ---- */
+body.skin-neon {
+  --board-bg: #000000;
+  --grid-color: #14142a;
+  --board-border: #1a3a4a;
+}
+
+body.skin-neon #board {
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.35);
+}
+
+body.skin-pastel {
+  --board-bg: #fdf6fb;
+  --grid-color: #efe3ee;
+  --board-border: #e4d0e2;
+}
+
+body.skin-pixel {
+  --board-bg: #101018;
+  --grid-color: #1c1c2a;
+  --board-border: #3a3a5a;
+}
+
+body.skin-pixel #board,
+body.skin-pixel #next-canvas {
+  image-rendering: pixelated;
+  border-radius: 0;
+}
+
+.skin-picker select {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 6px;
+  color: var(--text-color);
+  background: var(--switch-bg);
+  border: 1px solid var(--kbd-border);
+  border-radius: 4px;
+  cursor: pointer;
+}
