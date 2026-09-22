@@ -6,5 +6,8 @@
 .claude/scheduled_tasks.lock
 .claude/worktrees/
 
+# Worktrees creados con /worktree
+.trees/
+
 # Skills instaladas como caché (se restauran con skills-lock.json)
 .agents/
